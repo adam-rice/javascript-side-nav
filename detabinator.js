@@ -1,1 +1,1 @@
-/*jshint esversion: 6 */
+/*jshint esversion: 6, browser:true, -W097  */

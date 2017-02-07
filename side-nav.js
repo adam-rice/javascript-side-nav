@@ -1,13 +1,14 @@
 /*jshint esversion: 6, browser:true, -W097  */
-
 'use strict';
 
 class SideNav {
   constructor () {
-    this.sideNavEl = document.querySelector('.js-side-nav');
     this.showButtonEl = document.querySelector('.js-menu-show');
     this.hideButtonEl = document.querySelector('.js-menu-hide');
     this.sideNavContainerEl = document.querySelector('.js-side-nav-container');
+
+    this.detabinator = new Detabinator(this.sideNavContainerEl);
+    this.detabinator.inert = true;
 
     this.showSideNav = this.showSideNav.bind(this);
     this.hideSideNav = this.hideSideNav.bind(this);
@@ -15,59 +16,102 @@ class SideNav {
     this.onTouchStart = this.onTouchStart.bind(this);
     this.onTouchMove = this.onTouchMove.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
+    this.update = this.update.bind(this);
+    this.onTransitionEnd = this.onTransitionEnd.bind(this);
 
     this.startX = 0;
     this.currentX = 0;
+    this.touchingSideNav = false;
 
-
+    this.supportsPassive = undefined;
     this.addEventListeners();
   }
 
-  addEventListeners() {
+  applyPassive () {
+    if (this.supportsPassive !== undefined) {
+      return this.supportsPassive ? {passive: true} : false;
+    }
+
+    let isSupported = false;
+    try {
+      document.addEventListener('test', null, {get passive () {
+        isSupported = true;
+      }});
+    } catch (e) { }
+    this.supportsPassive = isSupported;
+    return this.applyPassive();
+  }
+
+  addEventListeners () {
     this.showButtonEl.addEventListener('click', this.showSideNav);
     this.hideButtonEl.addEventListener('click', this.hideSideNav);
     this.sideNavEl.addEventListener('click', this.hideSideNav);
     this.sideNavContainerEl.addEventListener('click', this.blockClicks);
 
-    this.sideNavContainerEl.addEventListener('touchstart', this.onTouchStart);
-    this.sideNavContainerEl.addEventListener('touchmove', this.onTouchMove);
-    this.sideNavContainerEl.addEventListener('touchend', this.onTouchEnd);
+    this.sideNavEl.addEventListener('touchstart', this.onTouchStart, this.applyPassive());
+    this.sideNavEl.addEventListener('touchmove', this.onTouchMove, this.applyPassive());
+    this.sideNavEl.addEventListener('touchend', this.onTouchEnd);
   }
 
-  onTouchStart(e) {
-    e.preventDefault();
+  onTouchStart (e) {
+    if (!this.sideNavEl.classList.contains('side-nav--visible'))
+      return;
+
     this.startX = e.touches[0].pageX;
     this.currentX = this.startX;
+
+    this.touchingSideNav = true;
+    requestAnimationFrame(this.update);
   }
 
-  onTouchMove(e) {
+  onTouchMove (e) {
+    if (!this.touchingSideNav)
+      return;
+
     this.currentX = e.touches[0].pageX;
-
-    const translateX = this.currentX - this.startX;
-    this.sideNavEl.style.transform = `${translateX}`;
   }
 
-  onTouchEnd(e) {
-    // this.currentX = e.touches[0].pageX;
+  onTouchEnd (e) {
+    if (!this.touchingSideNav)
+      return;
+
+    this.touchingSideNav = false;
+
+    const translateX = Math.min(0, this.currentX - this.startX);
+    this.sideNavContainerEl.style.transform = '';
+
+    if (translateX < 0) {
+      this.hideSideNav();
+    }
   }
 
-  blockClicks(e) {
-    e.stopPropogation();
+  update () {
+    if (!this.touchingSideNav)
+      return;
+
+    requestAnimationFrame(this.update);
+
+    const translateX = Math.min(0, this.currentX - this.startX);
+    this.sideNavContainerEl.style.transform = `translateX(${translateX}px)`;
+  }
+
+  blockClicks (e) {
+    e.stopPropagation();
   }
 
   onTransitionEnd (e) {
-  this.sideNavEl.classList.remove('side-nav--animatable');
-  this.sideNavEl.removeEventListener('transitionend', this.onTransitionEnd);
-}
+    this.sideNavEl.classList.remove('side-nav--animatable');
+    this.sideNavEl.removeEventListener('transitionend', this.onTransitionEnd);
+  }
 
-  showSideNav() {
+  showSideNav () {
     this.sideNavEl.classList.add('side-nav--animatable');
     this.sideNavEl.classList.add('side-nav--visible');
     this.detabinator.inert = false;
     this.sideNavEl.addEventListener('transitionend', this.onTransitionEnd);
   }
 
-  hideSideNav() {
+  hideSideNav () {
     this.sideNavEl.classList.add('side-nav--animatable');
     this.sideNavEl.classList.remove('side-nav--visible');
     this.detabinator.inert = true;

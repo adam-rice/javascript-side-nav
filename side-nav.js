@@ -4,16 +4,29 @@
 
 class SideNav {
   constructor () {
-    this.sideNavEl = document.querySelector('.js-menu');
-    this.toggleButtonEl = document.querySelector('.js-side-nav');
+    this.sideNavEl = document.querySelector('.js-side-nav');
+    this.showButtonEl = document.querySelector('.js-menu-show');
+    this.hideButtonEl = document.querySelector('.js-menu-hide');
 
     this.showSideNav = this.showSideNav.bind(this);
+    this.hideSideNav = this.hideSideNav.bind(this);
+
 
     this.addEventListeners();
   }
 
   addEventListeners() {
-    this.toggleButtonEl('click', this.showSideNav);
+    this.showButtonEl.addEventListener('click', this.showSideNav);
+    this.hideButtonEl.addEventListener('click', this.hideSideNav);
+
+  }
+
+  showSideNav() {
+    this.sideNavEl.classList.add('.side-nav--visible');
+  }
+
+  hideSideNav() {
+    this.sideNavEl.classList.remove('.side-nav--visible');
   }
 }
 

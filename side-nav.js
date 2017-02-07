@@ -3,6 +3,7 @@
 
 class SideNav {
   constructor () {
+    this.sideNavEl = document.querySelector('.js-side-nav');
     this.showButtonEl = document.querySelector('.js-menu-show');
     this.hideButtonEl = document.querySelector('.js-menu-hide');
     this.sideNavContainerEl = document.querySelector('.js-side-nav-container');
